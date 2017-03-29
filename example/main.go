@@ -15,7 +15,7 @@ func main() {
 		panic(err)
 	}
 	authInstance := tokenauth.NewDefaultAuthInstance(userStorage, config)
-	auth := tokenauth.NewAuth(authInstance)
+	auth := tokenauth.NewAuth(authInstance, "lang/english.json")
 
 	r := mux.NewRouter()
 	r.HandleFunc("/priv", func(res http.ResponseWriter, req *http.Request) {

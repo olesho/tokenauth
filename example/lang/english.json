@@ -1,0 +1,21 @@
+{
+	"ERROR_UNKNOWN": "Unknown error occured",
+	"ERROR_DECODE_JSON": "Unable to decode JSON",
+	"ERROR_LOGIN": "Unable to log in. User name of password invalid",
+	"ERROR_CREATE_USER": "Unable to create user",
+	"ERROR_FINISH_SIGNUP": "Unable to finish sign up process",
+	"ERROR_UPDATING_ACCOUNT": "Unable to update user account",
+	"ERROR_GET_ACCOUNT": "Unable to get user account",
+	"ERROR_SEND_RECOVERY": "Unable send recovery data",
+	"ERROR_NEW_PASSWORD": "Unable to set new password",
+	"ERROR_NO_TOKEN": "Token string not found",
+	"ERROR_TOKEN_INVALID": "Invalid token",
+
+	"SUCCESS_LOGIN": "Successfully logged in",
+	"SUCCESS_CREATE_USER": "User created successfully",
+	"SUCCESS_FINISH_SIGNUP": "Sign up process finished successfully",
+	"SUCCESS_UPDATING_ACCOUNT": "Successfully updated user account",
+	"SUCCESS_GET_ACCOUNT": "User account data delievered successfully",
+	"SUCCESS_SEND_RECOVERY": "Email with recovery code has been sent",
+	"SUCCESS_NEW_PASSWORD": "User password changed successfully"
+}
