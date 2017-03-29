@@ -3,7 +3,7 @@ package tokenauth
 
 // basic CRUD operations
 type UserStorage interface {
-	CreateUser(email string, passwordHash string) (*User, error)
+	CreateUser(name string, passwordHash string, additional map[string]interface{}) (*User, error)
 	ReadUser(id int64) (*User, error)
 	ReadUserByName(name string) (*User, error)
 	UpdateUser(user *User) error
@@ -12,11 +12,12 @@ type UserStorage interface {
 
 type User struct {
 	id           int64
-	email        string
+	name         string
 	passwordHash string
 	status       int
 	// recovery state is used in "password recovery token"
 	// whenever user sets new password this state is changed randomly to invalidate old token
 	recoveryState int64
 	created       string
+	additional    map[string]interface{}
 }

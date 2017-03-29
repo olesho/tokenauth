@@ -12,18 +12,30 @@ type MysqlConfig interface {
 	GetDbAddress() string
 	GetDbUser() string
 	GetDbPassword() string
+	GetDbTable() string
 }
 
 type MysqlStorage struct {
 	db *sql.DB
 }
 
-func (s *MysqlStorage) CreateUser(email string, passwordHash string) (*User, error) {
-	stmt, err := s.db.Prepare("INSERT INTO user (email, passwordHash) VALUES (?, ?, ?)")
+func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional map[string]interface{}) (*User, error) {
+	addKeys := ""
+	vals := make([]interface{}, len(additional))
+	if additional != nil {
+		i := 0
+		for k, v := range additional {
+			addKeys += ", " + k
+			vals[i] = v
+			i++
+		}
+	}
+
+	stmt, err := s.db.Prepare("INSERT INTO user (name, passwordHash) VALUES (?, ?)")
 	if err != nil {
 		return nil, err
 	}
-	res, err := stmt.Exec(email, passwordHash)
+	res, err := stmt.Exec(name, passwordHash, vals)
 	if err != nil {
 		return nil, err
 	}
@@ -32,8 +44,8 @@ func (s *MysqlStorage) CreateUser(email string, passwordHash string) (*User, err
 		return nil, err
 	}
 	return &User{
-		id:    id,
-		email: email,
+		id:   id,
+		name: name,
 	}, nil
 }
 func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
@@ -43,7 +55,7 @@ func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
 	}
 	if rows.Next() {
 		res := &User{}
-		err = rows.Scan(&res.id, &res.email, &res.passwordHash, &res.recoveryState, &res.created)
+		err = rows.Scan(&res.id, &res.name, &res.passwordHash, &res.recoveryState, &res.created)
 		return res, err
 	}
 	return nil, nil
@@ -56,22 +68,27 @@ func (s *MysqlStorage) ReadUserByName(name string) (*User, error) {
 	}
 	if rows.Next() {
 		res := &User{}
-		err = rows.Scan(&res.id, &res.email, &res.passwordHash, &res.recoveryState, &res.created)
+		err = rows.Scan(&res.id, &res.name, &res.passwordHash, &res.recoveryState, &res.created)
 		return res, err
 	}
 	return nil, nil
 }
 func (s *MysqlStorage) UpdateUser(user *User) error {
-	stmt, err := s.db.Prepare("UPDATE `user` SET email=?, passwordHash=?, recoveryState=? WHERE id = ?")
+	stmt, err := s.db.Prepare("UPDATE `user` SET name=?, passwordHash=?, recoveryState=? WHERE id = ?")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(user.email, user.passwordHash, user.recoveryState, user.id)
+	_, err = stmt.Exec(user.name, user.passwordHash, user.recoveryState, user.id)
 	return err
 }
 func (s *MysqlStorage) DeleteUser(user *User) error {
-	return nil
+	stmt, err := s.db.Prepare("DELETE FROM user WHERE id = ?")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(user.id)
+	return err
 }
 
 func NewMysqlStorage(conf MysqlConfig) (*MysqlStorage, error) {

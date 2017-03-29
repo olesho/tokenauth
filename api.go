@@ -77,6 +77,18 @@ func (a *DefaultAuthInstance) Logout(uid int64) error {
 	return nil
 }
 func (a *DefaultAuthInstance) Signup(user, password string) error {
+	err := ValidateEmail(user)
+	if err != nil {
+		return err
+	}
+
+	err = ValidatePassword(password)
+	if err != nil {
+		return err
+	}
+
+	//a.userStorage.CreateUser()
+
 	return nil
 }
 func (a *DefaultAuthInstance) RecoverPasswordToken(user string) (token string, err error) {

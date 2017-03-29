@@ -5,18 +5,6 @@ import (
 	"net/http"
 )
 
-/*
-type AuthHandlers interface {
-	PrivateAdapter(http.Handler) http.Handler
-
-	Login(http.ResponseWriter, *http.Request)
-	Logout(http.ResponseWriter, *http.Request)
-	Signup(http.ResponseWriter, *http.Request)
-	RecoverPassword(http.ResponseWriter, *http.Request)
-	ChangePassword(http.ResponseWriter, *http.Request)
-}
-*/
-
 type Auth struct {
 	Login           func(res http.ResponseWriter, req *http.Request)
 	Logout          func(res http.ResponseWriter, req *http.Request)

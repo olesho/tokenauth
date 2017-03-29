@@ -44,6 +44,7 @@ type ConfigVars struct {
 	DbAddress  string
 	DbUser     string
 	DbPassword string
+	DbTable    string
 }
 
 func (c *ConfigVars) GetSecretKey() string {
@@ -66,6 +67,9 @@ func (c *ConfigVars) GetDbUser() string {
 func (c *ConfigVars) GetDbPassword() string {
 	return c.DbPassword
 }
+func (c *ConfigVars) GetDbTable() string {
+	return c.DbTable
+}
 
 func NewEnvConfig() *ConfigVars {
 	return &ConfigVars{
@@ -75,6 +79,7 @@ func NewEnvConfig() *ConfigVars {
 		os.Getenv("DB_ADDRESS"),
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_TABLE"),
 	}
 }
 
