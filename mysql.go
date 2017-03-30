@@ -3,6 +3,7 @@ package tokenauth
 
 import (
 	"database/sql"
+	//	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -21,21 +22,25 @@ type MysqlStorage struct {
 
 func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional map[string]interface{}) (*User, error) {
 	addKeys := ""
-	vals := make([]interface{}, len(additional))
+	qMarks := ""
+	vals := make([]interface{}, len(additional)+2)
+	vals[0] = name
+	vals[1] = passwordHash
 	if additional != nil {
-		i := 0
+		i := 2
 		for k, v := range additional {
 			addKeys += ", " + k
+			qMarks += ", ?"
 			vals[i] = v
 			i++
 		}
 	}
 
-	stmt, err := s.db.Prepare("INSERT INTO user (name, passwordHash) VALUES (?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO user (name, passwordHash" + addKeys + ") VALUES (?, ?" + qMarks + ")")
 	if err != nil {
 		return nil, err
 	}
-	res, err := stmt.Exec(name, passwordHash, vals)
+	res, err := stmt.Exec(vals...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +97,7 @@ func (s *MysqlStorage) DeleteUser(user *User) error {
 }
 
 func NewMysqlStorage(conf MysqlConfig) (*MysqlStorage, error) {
+	//	log.Println(conf.GetDbUser() + ":" + conf.GetDbPassword() + "@tcp(" + conf.GetDbAddress() + ")/" + conf.GetDbName())
 	db, err := sql.Open("mysql",
 		conf.GetDbUser()+":"+conf.GetDbPassword()+"@tcp("+conf.GetDbAddress()+")/"+conf.GetDbName())
 	storage := &MysqlStorage{db}

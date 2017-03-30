@@ -12,7 +12,11 @@ import (
 
 func main() {
 	logger := log.New(os.Stdout, "", log.Lshortfile)
-	config := tokenauth.NewEnvConfig()
+	//config := tokenauth.NewEnvConfig()
+	config, err := tokenauth.NewFileConfig("config.json")
+	if err != nil {
+		panic(err)
+	}
 	userStorage, err := tokenauth.NewMysqlStorage(config)
 	if err != nil {
 		panic(err)
