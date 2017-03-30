@@ -3,6 +3,7 @@ package tokenauth
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	//	"strconv"
 )
@@ -19,7 +20,7 @@ func (a *Auth) PrivateAdapter(h http.Handler) http.Handler {
 	return nil
 }
 
-func NewAuth(authInstance AuthApi, langFile string) *Auth {
+func NewAuth(authInstance AuthApi, logger *log.Logger, langFile string) *Auth {
 	lang, err := NewLang(langFile)
 	if err != nil {
 		panic(err)
@@ -38,7 +39,7 @@ func NewAuth(authInstance AuthApi, langFile string) *Auth {
 			// try get parsed token and status for credentials
 			tokenString, err := authInstance.Login(fields["email"], fields["password"])
 			if err != nil {
-				//log.Println(fields["email"], err.Error())
+				logger.Println(err)
 				res.Write(resErrorMsg(lang.ERROR_LOGIN))
 				return
 			}
@@ -72,6 +73,7 @@ func NewAuth(authInstance AuthApi, langFile string) *Auth {
 			// signup and get token string
 			err = authInstance.Signup(fields["name"], fields["password"])
 			if err != nil {
+				logger.Println(err)
 				res.Write(resErrorMsg(lang.ERROR_CREATE_USER))
 				return
 			}

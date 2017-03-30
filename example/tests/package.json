@@ -1,0 +1,16 @@
+{
+  "name": "tests",
+  "version": "1.0.0",
+  "description": "Testing \"tokenauth\"",
+  "main": "app.js",
+  "scripts": {
+    "test": "mocha test.js"
+  },
+  "author": "Oleh Luchkiv",
+  "license": "ISC",
+  "dependencies": {
+    "assert": "^1.4.1",
+    "axios": "^0.15.3",
+    "mocha": "^3.2.0"
+  }
+}
