@@ -41,6 +41,7 @@ func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional m
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 	res, err := stmt.Exec(vals...)
 	if err != nil {
 		return nil, err
@@ -59,6 +60,7 @@ func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	if rows.Next() {
 		res := &User{}
 		err = rows.Scan(&res.id, &res.name, &res.passwordHash, &res.recoveryState, &res.created)
@@ -69,10 +71,10 @@ func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
 
 func (s *MysqlStorage) ReadUserByName(name string) (*User, error) {
 	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetDbTable()+" WHERE name = ? LIMIT 1", name)
-	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	if rows.Next() {
 		res := &User{}
 		err = rows.Scan(&res.id, &res.name, &res.passwordHash, &res.recoveryState, &res.created)
@@ -85,7 +87,7 @@ func (s *MysqlStorage) UpdateUser(user *User) error {
 	if err != nil {
 		return err
 	}
-
+	defer stmt.Close()
 	_, err = stmt.Exec(user.name, user.passwordHash, user.recoveryState, user.id)
 	return err
 }
@@ -94,6 +96,7 @@ func (s *MysqlStorage) DeleteUser(user *User) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(user.id)
 	return err
 }

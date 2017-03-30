@@ -10,9 +10,16 @@ import (
 	//	"strconv"
 )
 
+type AuthConfig interface {
+	GetLangFile() string
+	GetSuccessRedirect() string
+	GetFailRedirect() string
+}
+
 type Auth struct {
 	PrivateAdapter  func(h http.Handler) http.Handler
 	Login           func(res http.ResponseWriter, req *http.Request)
+	GetToken        func(res http.ResponseWriter, req *http.Request)
 	Logout          func(res http.ResponseWriter, req *http.Request)
 	Signup          func(res http.ResponseWriter, req *http.Request)
 	RecoverPassword func(res http.ResponseWriter, req *http.Request)
@@ -21,8 +28,8 @@ type Auth struct {
 
 //func (a *Auth) PrivateAdapter
 
-func NewAuth(authInstance AuthApi, logger *log.Logger, langFile string) *Auth {
-	lang, err := NewLang(langFile)
+func NewAuth(authInstance AuthApi, logger *log.Logger, config AuthConfig) *Auth {
+	lang, err := NewLang(config.GetLangFile())
 	if err != nil {
 		panic(err)
 	}
@@ -67,15 +74,40 @@ func NewAuth(authInstance AuthApi, logger *log.Logger, langFile string) *Auth {
 		},
 		Login: func(res http.ResponseWriter, req *http.Request) {
 			// decode request body (json)
+			var name, password string
+			name = req.FormValue("name")
+			password = req.FormValue("password")
+
+			// try get parsed token and status for credentials
+			tokenString, err := authInstance.Login(name, password)
+			if err != nil {
+				logger.Println(err)
+				http.Redirect(res, req, config.GetFailRedirect(), 301)
+				return
+			}
+
+			// success response
+			tokenCookie := http.Cookie{Name: "Token", Value: tokenString, HttpOnly: true, Path: "/"}
+			identityCookie := http.Cookie{Name: "Identity", Value: name, Path: "/"}
+
+			http.SetCookie(res, &tokenCookie)
+			http.SetCookie(res, &identityCookie)
+			http.Redirect(res, req, config.GetSuccessRedirect(), 301)
+
+			return
+		},
+		GetToken: func(res http.ResponseWriter, req *http.Request) {
 			var fields map[string]string
 			err := json.NewDecoder(req.Body).Decode(&fields)
 			if err != nil {
 				res.Write(resError(err))
 				return
 			}
+			name := fields["name"]
+			password := fields["password"]
 
 			// try get parsed token and status for credentials
-			tokenString, err := authInstance.Login(fields["name"], fields["password"])
+			tokenString, err := authInstance.Login(name, password)
 			if err != nil {
 				logger.Println(err)
 				res.Write(resErrorMsg(lang.ERROR_LOGIN))
@@ -83,21 +115,23 @@ func NewAuth(authInstance AuthApi, logger *log.Logger, langFile string) *Auth {
 			}
 
 			// success response
-			tokenCookie := http.Cookie{Name: "Token", Value: tokenString, HttpOnly: true, Path: "/"}
-			identityCookie := http.Cookie{Name: "Identity", Value: fields["name"], Path: "/"}
-			//			statusCookie := http.Cookie{Name: "Status", Value: strconv.Itoa(status), Path: "/"}
-			http.SetCookie(res, &tokenCookie)
-			http.SetCookie(res, &identityCookie)
-			//			http.SetCookie(res, &statusCookie)
-
 			payload := make(map[string]interface{})
-			payload["name"] = fields["name"]
+			payload["name"] = name
 			payload["token"] = tokenString
 			res.Write(resSuccess(payload))
 			return
 		},
 		Logout: func(res http.ResponseWriter, req *http.Request) {
-			res.Write([]byte("Login"))
+			// prevent browser from caching routes with restricted access
+			res.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
+			res.Header().Add("Expires", "0")
+
+			tokenCookie := http.Cookie{Name: "Token", Value: "", HttpOnly: true, Path: "/"}
+			identityCookie := http.Cookie{Name: "Identity", Value: "", Path: "/"}
+
+			http.SetCookie(res, &tokenCookie)
+			http.SetCookie(res, &identityCookie)
+			http.Redirect(res, req, config.GetFailRedirect(), 301)
 		},
 		Signup: func(res http.ResponseWriter, req *http.Request) {
 			// decode request body (json)

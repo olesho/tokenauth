@@ -14,7 +14,7 @@ type User struct {
 	id           int64
 	name         string
 	passwordHash string
-	status       int
+	//status       int
 	// recovery state is used in "password recovery token"
 	// whenever user sets new password this state is changed randomly to invalidate old token
 	recoveryState int64

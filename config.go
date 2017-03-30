@@ -37,8 +37,14 @@ type Config struct {
 */
 
 type ConfigVars struct {
-	SecretKey string
-	Issuer    string
+	FileKeyMap map[string]interface{}
+
+	SecretKey       string
+	Issuer          string
+	LangFile        string
+	LogFile         string
+	SuccessRedirect string
+	FailRedirect    string
 
 	DbName     string
 	DbAddress  string
@@ -53,6 +59,22 @@ func (c *ConfigVars) GetSecretKey() string {
 
 func (c *ConfigVars) GetIssuer() string {
 	return c.Issuer
+}
+
+func (c *ConfigVars) GetLangFile() string {
+	return c.LangFile
+}
+
+func (c *ConfigVars) GetLogFile() string {
+	return c.LogFile
+}
+
+func (c *ConfigVars) GetSuccessRedirect() string {
+	return c.SuccessRedirect
+}
+
+func (c *ConfigVars) GetFailRedirect() string {
+	return c.FailRedirect
 }
 
 func (c *ConfigVars) GetDbName() string {
@@ -73,8 +95,13 @@ func (c *ConfigVars) GetDbTable() string {
 
 func NewEnvConfig() *ConfigVars {
 	return &ConfigVars{
+		make(map[string]interface{}),
 		os.Getenv("SECRET_KEY"),
 		os.Getenv("ISSUER"),
+		os.Getenv("LANG_FILE"),
+		os.Getenv("LOG_FILE"),
+		os.Getenv("SUCCESS_REDIRECT"),
+		os.Getenv("FAIL_REDIRECT"),
 		os.Getenv("DB_NAME"),
 		os.Getenv("DB_ADDRESS"),
 		os.Getenv("DB_USER"),
@@ -85,10 +112,61 @@ func NewEnvConfig() *ConfigVars {
 
 func NewFileConfig(fileName string) (*ConfigVars, error) {
 	res := &ConfigVars{}
+
+	/*
+		data, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, err
+		}
+		err = json.Unmarshal(data, &res)
+	*/
+
 	data, err := ioutil.ReadFile(fileName)
 	if err != nil {
 		return nil, err
 	}
-	err = json.Unmarshal(data, &res)
+	err = json.Unmarshal(data, &res.FileKeyMap)
+
+	for k, v := range res.FileKeyMap {
+		switch k {
+		case "SecretKey":
+			res.SecretKey = v.(string)
+			break
+		case "Issuer":
+			res.Issuer = v.(string)
+			break
+
+		case "DbName":
+			res.DbName = v.(string)
+			break
+
+		case "DbAddress":
+			res.DbAddress = v.(string)
+			break
+
+		case "DbUser":
+			res.DbUser = v.(string)
+			break
+
+		case "DbPassword":
+			res.DbPassword = v.(string)
+			break
+
+		case "DbTable":
+			res.DbTable = v.(string)
+			break
+
+		case "LangFile":
+			res.LangFile = v.(string)
+			break
+		case "SuccessRedirect":
+			res.SuccessRedirect = v.(string)
+			break
+		case "FailRedirect":
+			res.FailRedirect = v.(string)
+			break
+		}
+	}
+
 	return res, err
 }
