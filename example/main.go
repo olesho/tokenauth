@@ -25,9 +25,9 @@ func main() {
 	auth := tokenauth.NewAuth(authInstance, logger, "lang/english.json")
 
 	r := mux.NewRouter()
-	r.HandleFunc("/priv", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("Hello"))
-	})
+	r.Handle("/priv", auth.PrivateAdapter(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+		res.Write([]byte("You access private route"))
+	})))
 	r.HandleFunc("/login", auth.Login).Methods("POST")
 	r.HandleFunc("/logout", auth.Logout).Methods("GET")
 	r.HandleFunc("/signup", auth.Signup).Methods("POST")

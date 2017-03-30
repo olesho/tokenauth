@@ -17,7 +17,8 @@ type MysqlConfig interface {
 }
 
 type MysqlStorage struct {
-	db *sql.DB
+	db   *sql.DB
+	conf MysqlConfig
 }
 
 func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional map[string]interface{}) (*User, error) {
@@ -36,7 +37,7 @@ func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional m
 		}
 	}
 
-	stmt, err := s.db.Prepare("INSERT INTO user (name, passwordHash" + addKeys + ") VALUES (?, ?" + qMarks + ")")
+	stmt, err := s.db.Prepare("INSERT INTO " + s.conf.GetDbTable() + " (name, passwordHash" + addKeys + ") VALUES (?, ?" + qMarks + ")")
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +55,7 @@ func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional m
 	}, nil
 }
 func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
-	rows, err := s.db.Query("SELECT * FROM `user` WHERE \"id\" = ? LIMIT 1", id)
+	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetDbTable()+" WHERE id = ? LIMIT 1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,8 @@ func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
 }
 
 func (s *MysqlStorage) ReadUserByName(name string) (*User, error) {
-	rows, err := s.db.Query("SELECT * FROM `user` WHERE \"name\" = ? LIMIT 1", name)
+	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetDbTable()+" WHERE name = ? LIMIT 1", name)
+	defer rows.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,7 @@ func (s *MysqlStorage) ReadUserByName(name string) (*User, error) {
 	return nil, nil
 }
 func (s *MysqlStorage) UpdateUser(user *User) error {
-	stmt, err := s.db.Prepare("UPDATE `user` SET name=?, passwordHash=?, recoveryState=? WHERE id = ?")
+	stmt, err := s.db.Prepare("UPDATE " + s.conf.GetDbTable() + " SET name=?, passwordHash=?, recoveryState=? WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -88,7 +90,7 @@ func (s *MysqlStorage) UpdateUser(user *User) error {
 	return err
 }
 func (s *MysqlStorage) DeleteUser(user *User) error {
-	stmt, err := s.db.Prepare("DELETE FROM user WHERE id = ?")
+	stmt, err := s.db.Prepare("DELETE FROM " + s.conf.GetDbTable() + " WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -97,9 +99,8 @@ func (s *MysqlStorage) DeleteUser(user *User) error {
 }
 
 func NewMysqlStorage(conf MysqlConfig) (*MysqlStorage, error) {
-	//	log.Println(conf.GetDbUser() + ":" + conf.GetDbPassword() + "@tcp(" + conf.GetDbAddress() + ")/" + conf.GetDbName())
 	db, err := sql.Open("mysql",
 		conf.GetDbUser()+":"+conf.GetDbPassword()+"@tcp("+conf.GetDbAddress()+")/"+conf.GetDbName())
-	storage := &MysqlStorage{db}
+	storage := &MysqlStorage{db, conf}
 	return storage, err
 }

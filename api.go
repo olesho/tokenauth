@@ -3,6 +3,7 @@ package tokenauth
 
 import (
 	"errors"
+	//	"log"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -10,7 +11,7 @@ import (
 )
 
 type AuthApi interface {
-	Authorized(token string) bool
+	Authorized(tokenString string) (*User, error)
 	Login(user, password string) (token string, err error)
 	Logout(uid int64) error
 	Signup(user, password string) error
@@ -27,8 +28,31 @@ func NewDefaultAuthInstance(userStorage UserStorage, config Config) *DefaultAuth
 	return &DefaultAuthInstance{userStorage, config}
 }
 
-func (a *DefaultAuthInstance) Authorized(token string) bool {
-	return false
+func (a *DefaultAuthInstance) Authorized(tokenString string) (*User, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(a.config.GetSecretKey()), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	// check token's "claims" fields
+	claims := GetClaims(token)
+	if claims == nil {
+		return nil, nil
+	}
+
+	// check claims validity
+	err = claims.Valid()
+	if err != nil {
+		return nil, err
+	}
+
+	if token.Valid && claims.RecoveryState < 0 {
+		return a.userStorage.ReadUser(claims.Uid)
+	}
+	return nil, nil
 }
 
 func (a *DefaultAuthInstance) Login(user, password string) (token string, err error) {
@@ -114,6 +138,14 @@ type Claims struct {
 func (c *Claims) Valid() error {
 	if time.Now().Unix() > c.Exp {
 		return errors.New("Token expired")
+	}
+	return nil
+}
+
+func GetClaims(token *jwt.Token) *Claims {
+	claims, ok := token.Claims.(*Claims)
+	if ok {
+		return claims
 	}
 	return nil
 }

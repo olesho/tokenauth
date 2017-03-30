@@ -6,7 +6,7 @@ import (
 	"regexp"
 )
 
-var mailAddressRegex = regexp.MustCompile(`^([a-zA-Z0-9][-_.a-zA-Z0-9]*)(@[-_.a-zA-Z0-9]+)?$`)
+var mailAddressRegex = regexp.MustCompile(`^[a-zA-Z0-9][-_.a-zA-Z0-9]*@[-_.a-zA-Z0-9]+?$`)
 var twoNumbersRegex = regexp.MustCompile(`.*\d.*\d.*`)
 var addressRegex = regexp.MustCompile(`.?\d{1,5}.?`)
 var phoneRegex = regexp.MustCompile(`^\+?(\s?\d+\s?)+$`)
@@ -14,7 +14,7 @@ var fullnameRegex = regexp.MustCompile(`^[A-Za-z]([-']?[A-Za-z]+)*( [A-Za-z]([-'
 
 func ValidateEmail(field string) error {
 	if !mailAddressRegex.MatchString(field) {
-		return errors.New("Invalid email")
+		return errors.New("Invalid email " + field)
 	}
 	return nil
 }
