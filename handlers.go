@@ -34,6 +34,21 @@ func NewAuth(authInstance AuthApi, logger *log.Logger, config AuthConfig) *Auth 
 		panic(err)
 	}
 
+	var hasToken = func(req *http.Request) string {
+		// try to get token string from cookie
+		tokenCookie, _ := req.Cookie("Token")
+		tokenString := ""
+		// try to get token string from cookie
+		if tokenCookie != nil {
+			tokenString = tokenCookie.Value
+		}
+		// try to get token string from HTTP header
+		if tokenString == "" {
+			tokenString = req.Header.Get("Authorization")
+		}
+		return tokenString
+	}
+
 	return &Auth{
 		PrivateAdapter: func(h http.Handler) http.Handler {
 			return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
@@ -41,38 +56,31 @@ func NewAuth(authInstance AuthApi, logger *log.Logger, config AuthConfig) *Auth 
 				res.Header().Add("Cache-Control", "no-cache, no-store, must-revalidate")
 				res.Header().Add("Expires", "0")
 
-				// try to get token string from cookie
-				tokenCookie, _ := req.Cookie("Token")
-				tokenString := ""
-				// try to get token string from cookie
-				if tokenCookie != nil {
-					tokenString = tokenCookie.Value
-				}
-				// try to get token string from HTTP header
-				if tokenString == "" {
-					tokenString = req.Header.Get("Authorization")
-				}
+				tokenString := hasToken(req)
 
-				if tokenString == "" {
-					res.WriteHeader(401)
-					res.Write(resErrorMsg(lang.ERROR_NO_TOKEN))
-					return
-				}
-
-				if user, err := authInstance.Authorized(tokenString); err == nil && user != nil {
-					context.Set(req, "user", user)
-					// serve next
-					h.ServeHTTP(res, req)
-					return
+				if tokenString != "" {
+					if user, err := authInstance.Authorized(tokenString); err == nil && user != nil {
+						context.Set(req, "user", user)
+						// serve next
+						h.ServeHTTP(res, req)
+						return
+					}
 				}
 
 				// otherwise send error response
-				res.WriteHeader(401)
-				res.Write(resErrorMsg(lang.ERROR_TOKEN_INVALID))
-				return
+				http.Redirect(res, req, config.GetFailRedirect(), 301)
 			})
 		},
 		Login: func(res http.ResponseWriter, req *http.Request) {
+			// prevent Login twice
+			tokenString := hasToken(req)
+			if tokenString != "" {
+				if user, err := authInstance.Authorized(tokenString); err == nil && user != nil {
+					http.Redirect(res, req, config.GetSuccessRedirect(), 301)
+					return
+				}
+			}
+
 			// decode request body (json)
 			var name, password string
 			name = req.FormValue("name")
