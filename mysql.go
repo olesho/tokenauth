@@ -13,7 +13,7 @@ type MysqlConfig interface {
 	GetDbAddress() string
 	GetDbUser() string
 	GetDbPassword() string
-	GetDbTable() string
+	GetConfigTableName() string
 }
 
 type MysqlStorage struct {
@@ -37,7 +37,7 @@ func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional m
 		}
 	}
 
-	stmt, err := s.db.Prepare("INSERT INTO " + s.conf.GetDbTable() + " (name, passwordHash" + addKeys + ") VALUES (?, ?" + qMarks + ")")
+	stmt, err := s.db.Prepare("INSERT INTO " + s.conf.GetConfigTableName() + " (name, passwordHash" + addKeys + ") VALUES (?, ?" + qMarks + ")")
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s *MysqlStorage) CreateUser(name string, passwordHash string, additional m
 	}, nil
 }
 func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
-	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetDbTable()+" WHERE id = ? LIMIT 1", id)
+	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetConfigTableName()+" WHERE id = ? LIMIT 1", id)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func (s *MysqlStorage) ReadUser(id int64) (*User, error) {
 }
 
 func (s *MysqlStorage) ReadUserByName(name string) (*User, error) {
-	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetDbTable()+" WHERE name = ? LIMIT 1", name)
+	rows, err := s.db.Query("SELECT * FROM "+s.conf.GetConfigTableName()+" WHERE name = ? LIMIT 1", name)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *MysqlStorage) ReadUserByName(name string) (*User, error) {
 	return nil, nil
 }
 func (s *MysqlStorage) UpdateUser(user *User) error {
-	stmt, err := s.db.Prepare("UPDATE " + s.conf.GetDbTable() + " SET name=?, passwordHash=?, recoveryState=? WHERE id = ?")
+	stmt, err := s.db.Prepare("UPDATE " + s.conf.GetConfigTableName() + " SET name=?, passwordHash=?, recoveryState=? WHERE id = ?")
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (s *MysqlStorage) UpdateUser(user *User) error {
 	return err
 }
 func (s *MysqlStorage) DeleteUser(user *User) error {
-	stmt, err := s.db.Prepare("DELETE FROM " + s.conf.GetDbTable() + " WHERE id = ?")
+	stmt, err := s.db.Prepare("DELETE FROM " + s.conf.GetConfigTableName() + " WHERE id = ?")
 	if err != nil {
 		return err
 	}
